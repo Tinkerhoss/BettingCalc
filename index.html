@@ -15,6 +15,7 @@
             --border-color: #475569;
             --dotted-line: rgba(148, 163, 184, 0.4);
             --danger: #ef4444;
+            --danger-hover: #dc2626;
             --success: #10b981;
         }
 
@@ -37,6 +38,7 @@
             border-radius: 12px;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
             box-sizing: border-box;
+            margin-bottom: 20px;
         }
 
         h1 {
@@ -53,17 +55,23 @@
             margin-bottom: 30px;
             font-size: 0.95rem;
         }
+        
+        .header-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
 
         /* Views */
-        #presets-view, #calculator-view {
+        #presets-view, #calculator-view, #settings-view {
             display: none;
         }
 
-        #presets-view.active, #calculator-view.active {
+        #presets-view.active, #calculator-view.active, #settings-view.active {
             display: block;
         }
 
-        .back-btn {
+        .nav-btn {
             background: none;
             border: none;
             color: var(--text-muted);
@@ -77,7 +85,7 @@
             font-weight: bold;
         }
 
-        .back-btn:hover {
+        .nav-btn:hover {
             color: var(--text-main);
         }
 
@@ -98,6 +106,15 @@
         .preset-card:hover {
             background-color: rgba(255, 255, 255, 0.1);
             transform: translateY(-2px);
+        }
+
+        .preset-card.no-hover {
+            cursor: default;
+            transform: none;
+        }
+
+        .preset-card.no-hover:hover {
+            background-color: rgba(255, 255, 255, 0.05);
         }
 
         .preset-info h3 {
@@ -162,6 +179,27 @@
             padding-bottom: 8px;
             border-bottom: 1px dotted var(--dotted-line);
         }
+        
+        .formula-group {
+            margin-bottom: 20px;
+            background: rgba(0,0,0,0.2);
+            padding: 10px;
+            border-radius: 6px;
+        }
+        
+        .formula-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.95rem;
+            color: var(--accent);
+        }
+        
+        .formula-vars {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            font-family: monospace;
+        }
 
         .form-row.result-row {
             margin-top: 10px;
@@ -185,19 +223,22 @@
             font-family: inherit;
         }
 
+        input.formula-input {
+            width: 100%;
+            text-align: left;
+            background: #111827;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            font-family: monospace;
+            font-size: 0.9rem;
+            box-sizing: border-box;
+        }
+
         input[type="number"]::-webkit-inner-spin-button, 
         input[type="number"]::-webkit-outer-spin-button { 
             -webkit-appearance: none; 
             margin: 0; 
-        }
-
-        select {
-            background-color: #2a3441;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            padding: 4px;
-            text-align: left;
-            cursor: pointer;
         }
 
         .result-value {
@@ -208,6 +249,7 @@
 
         .ev-positive { color: var(--success); }
         .ev-negative { color: var(--danger); }
+        .error-text { color: var(--danger); font-size: 0.9rem; }
 
         /* Buttons */
         .btn-group {
@@ -234,18 +276,26 @@
             background-color: var(--accent-hover);
         }
         
-        button.export-btn {
-            background-color: #059669;
-        }
+        button.export-btn { background-color: #059669; }
+        button.export-btn:hover { background-color: #047857; }
+        
+        button.danger-btn { background-color: var(--danger); }
+        button.danger-btn:hover { background-color: var(--danger-hover); }
 
-        button.export-btn:hover {
-            background-color: #047857;
+        button.small-del-btn {
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
         }
+        button.small-del-btn:hover { background: var(--danger-hover); }
 
         /* Log Section */
         .log-section {
             display: none;
-            margin-top: 40px;
             width: 100%;
             max-width: 800px;
             background-color: var(--container-bg);
@@ -291,8 +341,13 @@
 
     <!-- PRESETS VIEW (MAIN PAGE) -->
     <div id="presets-view" class="container active">
-        <h1>Your Presets</h1>
-        <div class="subtitle">Select a setup to launch the calculator</div>
+        <div class="header-flex">
+            <div>
+                <h1>Your Presets</h1>
+                <div class="subtitle">Select a setup to launch the calculator</div>
+            </div>
+            <button class="nav-btn" style="margin: 0; padding: 10px;" onclick="showSettingsView()">⚙️ Settings</button>
+        </div>
 
         <div id="preset-list">
             <!-- Presets rendered here via JS -->
@@ -305,7 +360,11 @@
                 <input type="text" id="new-preset-name" placeholder="e.g. Weekend Racing">
             </div>
             <div class="form-row">
-                <label>Fractional Kelly (Decimal)</label>
+                <label>Bankroll</label>
+                <input type="number" id="new-preset-bankroll" step="1" value="5000">
+            </div>
+            <div class="form-row">
+                <label>Fractional Kelly (Dec)</label>
                 <input type="number" id="new-preset-fraction" step="0.001" value="0.25">
             </div>
             <div class="form-row">
@@ -316,9 +375,67 @@
         </div>
     </div>
 
+    <!-- SETTINGS VIEW -->
+    <div id="settings-view" class="container">
+        <button class="nav-btn" onclick="showPresetsView()">&#8592; Back to Home</button>
+        
+        <h1>Settings</h1>
+        <div class="subtitle">Manage presets, logs, and customize formulas</div>
+
+        <h3 style="border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">Manage Presets</h3>
+        <div id="settings-preset-list" style="margin-bottom: 30px;">
+            <!-- Presets rendered here for deletion -->
+        </div>
+
+        <h3 style="border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">Session Logs</h3>
+        <button class="action-btn danger-btn" style="margin-bottom: 30px;" onclick="clearSessionLogs()">Clear All Session Logs</button>
+
+        <h3 style="border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">Calculation Formulas</h3>
+        <p style="font-size: 0.9rem; color: var(--text-muted);">Customize the JS expressions used to calculate your returns. If you break it, just restore defaults.</p>
+        
+        <h4 style="color: white; margin-top: 25px;">Back Bets Logic</h4>
+        <div class="formula-group">
+            <div class="formula-vars">Available vars: <code>bankroll, kelly, fraction, odds, comm, p, q, b</code></div>
+            <label>Stake Amount</label>
+            <input type="text" class="formula-input" id="f-back-stake">
+            
+            <label style="margin-top: 15px;">Net Win</label>
+            <div class="formula-vars">Available vars: <code>[all above] + stake</code></div>
+            <input type="text" class="formula-input" id="f-back-win">
+            
+            <label style="margin-top: 15px;">Expected Value (%)</label>
+            <div class="formula-vars">Available vars: <code>[all above] + stake, netWin</code></div>
+            <input type="text" class="formula-input" id="f-back-ev">
+        </div>
+
+        <h4 style="color: white; margin-top: 25px;">Lay Bets Logic</h4>
+        <div class="formula-group">
+            <div class="formula-vars">Available vars: <code>bankroll, kelly, fraction, odds, comm, pLayer, pBacker, b</code></div>
+            <label>Liability (Risk)</label>
+            <input type="text" class="formula-input" id="f-lay-liability">
+            
+            <label style="margin-top: 15px;">Backer's Stake</label>
+            <div class="formula-vars">Available vars: <code>[all above] + liability</code></div>
+            <input type="text" class="formula-input" id="f-lay-backer">
+            
+            <label style="margin-top: 15px;">Net Win</label>
+            <div class="formula-vars">Available vars: <code>[all above] + liability, backersStake</code></div>
+            <input type="text" class="formula-input" id="f-lay-win">
+            
+            <label style="margin-top: 15px;">Expected Value (%)</label>
+            <div class="formula-vars">Available vars: <code>[all above] + liability, backersStake, netWin</code></div>
+            <input type="text" class="formula-input" id="f-lay-ev">
+        </div>
+
+        <div class="btn-group">
+            <button class="action-btn export-btn" onclick="saveFormulas()">Save Formulas</button>
+            <button class="action-btn danger-btn" onclick="restoreDefaultFormulas()">Restore Defaults</button>
+        </div>
+    </div>
+
     <!-- CALCULATOR VIEW -->
     <div id="calculator-view" class="container">
-        <button class="back-btn" onclick="showPresetsView()">&#8592; Back to Presets</button>
+        <button class="nav-btn" onclick="showPresetsView()">&#8592; Back to Presets</button>
 
         <h1 id="main-title">Laying with Kelly Calculator</h1>
         <div class="subtitle" id="main-subtitle">For calculating your stake sizes, for lay bets, based on the Kelly Criterion</div>
@@ -356,6 +473,7 @@
             </div>
 
             <br>
+            <div id="lay-error" class="error-text"></div>
             <div class="form-row result-row">
                 <label>Liability</label>
                 <div class="result-value" id="lay-res-liability">£0.00</div>
@@ -406,6 +524,7 @@
             </div>
 
             <br>
+            <div id="back-error" class="error-text"></div>
             <div class="form-row result-row">
                 <label>Your Stake</label>
                 <div class="result-value" id="back-res-stake">£0.00</div>
@@ -452,13 +571,43 @@
     </div>
 
     <script>
-        // --- PRESETS LOGIC ---
-        
-        // Load presets from LocalStorage or initialize with a default setup
+        // --- DATA & STATE ---
+        let betLog = [];
+
         let presets = JSON.parse(localStorage.getItem('bettingPresets')) || [
-            { id: 1, name: 'Betfair Exchange', fraction: '0.25', comm: 2.0 }
+            { id: 1, name: 'Betfair Exchange', bankroll: 5000, fraction: '0.25', comm: 2.0 }
         ];
 
+        const defaultFormulas = {
+            backStake: 'bankroll * kelly * fraction',
+            backNetWin: 'stake * b',
+            backEV: '100 * (1 + (((p * netWin) - (q * stake)) / stake))',
+            layLiability: 'bankroll * kelly * fraction',
+            layBackersStake: 'liability / (odds - 1)',
+            layNetWin: 'backersStake * (1 - (comm / 100))',
+            layEV: '100 * (1 + (((pLayer * netWin) - (pBacker * liability)) / liability))'
+        };
+
+        let formulas = JSON.parse(localStorage.getItem('bettingFormulas')) || { ...defaultFormulas };
+
+        // --- NAVIGATION ---
+        function showPresetsView() {
+            document.getElementById('calculator-view').classList.remove('active');
+            document.getElementById('log-section').classList.remove('active');
+            document.getElementById('settings-view').classList.remove('active');
+            document.getElementById('presets-view').classList.add('active');
+            renderPresets();
+        }
+
+        function showSettingsView() {
+            document.getElementById('presets-view').classList.remove('active');
+            document.getElementById('calculator-view').classList.remove('active');
+            document.getElementById('log-section').classList.remove('active');
+            document.getElementById('settings-view').classList.add('active');
+            renderSettings();
+        }
+
+        // --- PRESETS LOGIC ---
         function savePresets() {
             localStorage.setItem('bettingPresets', JSON.stringify(presets));
         }
@@ -474,7 +623,7 @@
                 div.innerHTML = `
                     <div class="preset-info">
                         <h3>${p.name}</h3>
-                        <p>${p.fraction} Kelly | ${p.comm}% Commission</p>
+                        <p>£${p.bankroll} Bankroll | ${p.fraction} Kelly | ${p.comm}% Comm</p>
                     </div>
                     <div style="color: var(--accent); font-size: 1.5rem;">&#8594;</div>
                 `;
@@ -484,65 +633,108 @@
 
         function addNewPreset() {
             const name = document.getElementById('new-preset-name').value || 'New Custom Preset';
+            const bankroll = parseFloat(document.getElementById('new-preset-bankroll').value) || 5000;
             const fraction = document.getElementById('new-preset-fraction').value || '1';
             const comm = parseFloat(document.getElementById('new-preset-comm').value) || 0;
 
-            presets.push({
-                id: Date.now(),
-                name: name,
-                fraction: fraction,
-                comm: comm
-            });
-
+            presets.push({ id: Date.now(), name, bankroll, fraction, comm });
             savePresets();
             renderPresets();
 
-            // Reset the form fields
             document.getElementById('new-preset-name').value = '';
-            document.getElementById('new-preset-fraction').value = '0.25';
-            document.getElementById('new-preset-comm').value = '2';
         }
 
         function openPreset(id) {
             const p = presets.find(x => x.id === id);
             if (!p) return;
 
-            // Inject preset settings into calculator inputs
+            document.getElementById('lay-bankroll').value = p.bankroll;
+            document.getElementById('back-bankroll').value = p.bankroll;
             document.getElementById('lay-fraction').value = p.fraction;
             document.getElementById('back-fraction').value = p.fraction;
             document.getElementById('lay-comm').value = p.comm;
             document.getElementById('back-comm').value = p.comm;
 
-            // Refresh UI Calculations
             updateLayUI();
             updateBackUI();
 
-            // Toggle views
             document.getElementById('presets-view').classList.remove('active');
             document.getElementById('calculator-view').classList.add('active');
             document.getElementById('log-section').classList.add('active');
         }
 
-        function showPresetsView() {
-            document.getElementById('calculator-view').classList.remove('active');
-            document.getElementById('log-section').classList.remove('active');
-            document.getElementById('presets-view').classList.add('active');
+        // --- SETTINGS LOGIC ---
+        function renderSettings() {
+            // Render Presets for Deletion
+            const list = document.getElementById('settings-preset-list');
+            list.innerHTML = '';
+            presets.forEach(p => {
+                const div = document.createElement('div');
+                div.className = 'preset-card no-hover';
+                div.innerHTML = `
+                    <div class="preset-info">
+                        <h3>${p.name}</h3>
+                        <p>£${p.bankroll} | ${p.fraction} Kelly | ${p.comm}% Comm</p>
+                    </div>
+                    <button class="small-del-btn" onclick="deletePreset(${p.id})">Delete</button>
+                `;
+                list.appendChild(div);
+            });
+
+            // Populate Formulas
+            document.getElementById('f-back-stake').value = formulas.backStake;
+            document.getElementById('f-back-win').value = formulas.backNetWin;
+            document.getElementById('f-back-ev').value = formulas.backEV;
+            document.getElementById('f-lay-liability').value = formulas.layLiability;
+            document.getElementById('f-lay-backer').value = formulas.layBackersStake;
+            document.getElementById('f-lay-win').value = formulas.layNetWin;
+            document.getElementById('f-lay-ev').value = formulas.layEV;
         }
 
-        // Initialize presets on load
-        renderPresets();
+        function deletePreset(id) {
+            if(confirm("Delete this preset?")) {
+                presets = presets.filter(p => p.id !== id);
+                savePresets();
+                renderSettings();
+            }
+        }
 
-        // --- CALCULATOR & LOGGING LOGIC ---
-        
-        let betLog = [];
+        function clearSessionLogs() {
+            if(confirm("Clear all logs for this session?")) {
+                betLog = [];
+                renderLogTable();
+                alert("Logs cleared.");
+            }
+        }
 
+        function saveFormulas() {
+            formulas = {
+                backStake: document.getElementById('f-back-stake').value,
+                backNetWin: document.getElementById('f-back-win').value,
+                backEV: document.getElementById('f-back-ev').value,
+                layLiability: document.getElementById('f-lay-liability').value,
+                layBackersStake: document.getElementById('f-lay-backer').value,
+                layNetWin: document.getElementById('f-lay-win').value,
+                layEV: document.getElementById('f-lay-ev').value
+            };
+            localStorage.setItem('bettingFormulas', JSON.stringify(formulas));
+            alert("Formulas saved successfully.");
+        }
+
+        function restoreDefaultFormulas() {
+            if(confirm("Are you sure you want to restore default formulas?")) {
+                formulas = { ...defaultFormulas };
+                localStorage.setItem('bettingFormulas', JSON.stringify(formulas));
+                renderSettings();
+            }
+        }
+
+        // --- CALCULATOR & LOGIC ENGINE ---
         function switchTab(tab) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
-            
             document.getElementById(tab + '-tab').classList.add('active');
             event.target.classList.add('active');
-
             if (tab === 'lay') {
                 document.getElementById('main-title').innerText = "Laying with Kelly Calculator";
                 document.getElementById('main-subtitle').innerText = "For calculating your stake sizes, for lay bets, based on the Kelly Criterion";
@@ -553,10 +745,12 @@
         }
 
         function formatCurrency(num) {
+            if (isNaN(num)) return '£0.00';
             return '£' + parseFloat(num).toFixed(2);
         }
 
         function calculateLayValues() {
+            document.getElementById('lay-error').innerText = '';
             const odds = parseFloat(document.getElementById('lay-odds').value);
             const fair = parseFloat(document.getElementById('lay-fair').value);
             const bankroll = parseFloat(document.getElementById('lay-bankroll').value);
@@ -572,21 +766,31 @@
             let kelly = pLayer - (pBacker / b);
             if (kelly < 0) kelly = 0; 
 
-            const fullLiability = bankroll * kelly;
-            const targetLiability = fullLiability * fraction;
-            const backersStake = targetLiability / (odds - 1);
-            const netWin = backersStake * (1 - (comm / 100));
-            const expectedProfit = (pLayer * netWin) - (pBacker * targetLiability);
-            
-            let evPercent = 0;
-            if (targetLiability > 0) {
-                evPercent = 100 * (1 + (expectedProfit / targetLiability));
-            }
+            try {
+                // Dynamic Evaluation
+                const calcLiability = new Function('bankroll', 'kelly', 'fraction', 'odds', 'comm', 'pLayer', 'pBacker', 'b', `return ${formulas.layLiability}`);
+                const targetLiability = calcLiability(bankroll, kelly, fraction, odds, comm, pLayer, pBacker, b);
 
-            return { liability: targetLiability, backersStake: backersStake, netWin: netWin, ev: evPercent };
+                const calcBacker = new Function('bankroll', 'kelly', 'fraction', 'odds', 'comm', 'pLayer', 'pBacker', 'b', 'liability', `return ${formulas.layBackersStake}`);
+                const backersStake = calcBacker(bankroll, kelly, fraction, odds, comm, pLayer, pBacker, b, targetLiability);
+
+                const calcWin = new Function('bankroll', 'kelly', 'fraction', 'odds', 'comm', 'pLayer', 'pBacker', 'b', 'liability', 'backersStake', `return ${formulas.layNetWin}`);
+                const netWin = calcWin(bankroll, kelly, fraction, odds, comm, pLayer, pBacker, b, targetLiability, backersStake);
+
+                const calcEV = new Function('bankroll', 'kelly', 'fraction', 'odds', 'comm', 'pLayer', 'pBacker', 'b', 'liability', 'backersStake', 'netWin', `return ${formulas.layEV}`);
+                let evPercent = calcEV(bankroll, kelly, fraction, odds, comm, pLayer, pBacker, b, targetLiability, backersStake, netWin);
+                if(isNaN(evPercent)) evPercent = 0;
+
+                return { liability: targetLiability, backersStake: backersStake, netWin: netWin, ev: evPercent };
+            } catch (err) {
+                document.getElementById('lay-error').innerText = 'Formula Error: Check settings for Lay logic.';
+                console.error(err);
+                return null;
+            }
         }
 
         function calculateBackValues() {
+            document.getElementById('back-error').innerText = '';
             const odds = parseFloat(document.getElementById('back-odds').value);
             const fair = parseFloat(document.getElementById('back-fair').value);
             const bankroll = parseFloat(document.getElementById('back-bankroll').value);
@@ -602,26 +806,32 @@
             let kelly = p - (q / b);
             if (kelly < 0) kelly = 0;
 
-            const targetStake = bankroll * kelly * fraction;
-            const netWin = targetStake * b;
-            const expectedProfit = (p * netWin) - (q * targetStake);
-            
-            let evPercent = 0;
-            if (targetStake > 0) {
-                evPercent = 100 * (1 + (expectedProfit / targetStake));
-            }
+            try {
+                // Dynamic Evaluation
+                const calcStake = new Function('bankroll', 'kelly', 'fraction', 'odds', 'comm', 'p', 'q', 'b', `return ${formulas.backStake}`);
+                const targetStake = calcStake(bankroll, kelly, fraction, odds, comm, p, q, b);
 
-            return { stake: targetStake, netWin: netWin, ev: evPercent };
+                const calcWin = new Function('bankroll', 'kelly', 'fraction', 'odds', 'comm', 'p', 'q', 'b', 'stake', `return ${formulas.backNetWin}`);
+                const netWin = calcWin(bankroll, kelly, fraction, odds, comm, p, q, b, targetStake);
+
+                const calcEV = new Function('bankroll', 'kelly', 'fraction', 'odds', 'comm', 'p', 'q', 'b', 'stake', 'netWin', `return ${formulas.backEV}`);
+                let evPercent = calcEV(bankroll, kelly, fraction, odds, comm, p, q, b, targetStake, netWin);
+                if(isNaN(evPercent)) evPercent = 0;
+
+                return { stake: targetStake, netWin: netWin, ev: evPercent };
+            } catch (err) {
+                document.getElementById('back-error').innerText = 'Formula Error: Check settings for Back logic.';
+                console.error(err);
+                return null;
+            }
         }
 
         function updateLayUI() {
             const res = calculateLayValues();
             if (!res) return;
-
             document.getElementById('lay-res-liability').innerText = formatCurrency(res.liability);
             document.getElementById('lay-res-backer').innerText = formatCurrency(res.backersStake);
             document.getElementById('lay-res-win').innerText = formatCurrency(res.netWin);
-            
             const evEl = document.getElementById('lay-res-ev');
             evEl.innerText = res.ev.toFixed(2) + '%';
             evEl.className = 'result-value ' + (res.ev >= 100 ? 'ev-positive' : 'ev-negative');
@@ -630,10 +840,8 @@
         function updateBackUI() {
             const res = calculateBackValues();
             if (!res) return;
-
             document.getElementById('back-res-stake').innerText = formatCurrency(res.stake);
             document.getElementById('back-res-win').innerText = formatCurrency(res.netWin);
-            
             const evEl = document.getElementById('back-res-ev');
             evEl.innerText = res.ev.toFixed(2) + '%';
             evEl.className = 'result-value ' + (res.ev >= 100 ? 'ev-positive' : 'ev-negative');
@@ -645,6 +853,7 @@
         const backInputs = ['back-odds', 'back-fair', 'back-bankroll', 'back-fraction', 'back-comm'];
         backInputs.forEach(id => document.getElementById(id).addEventListener('input', updateBackUI));
 
+        // --- SESSION LOGGING ---
         function logBet(type) {
             const now = new Date();
             const dateStr = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
@@ -652,6 +861,7 @@
 
             if (type === 'lay') {
                 const res = calculateLayValues();
+                if(!res) return alert("Fix calculation errors before saving.");
                 logEntry = {
                     dateTime: dateStr,
                     name: document.getElementById('lay-name').value || 'Unnamed Lay',
@@ -668,6 +878,7 @@
                 };
             } else {
                 const res = calculateBackValues();
+                if(!res) return alert("Fix calculation errors before saving.");
                 logEntry = {
                     dateTime: dateStr,
                     name: document.getElementById('back-name').value || 'Unnamed Back',
@@ -715,10 +926,7 @@
         }
 
         function exportCSV() {
-            if (betLog.length === 0) {
-                alert('No bets to export.');
-                return;
-            }
+            if (betLog.length === 0) return alert('No bets to export.');
 
             const headers = [
                 "Date & Time", "Bet Name", "Type", "Market Odds", "Fair Odds", 
@@ -756,6 +964,9 @@
             link.click();
             document.body.removeChild(link);
         }
+
+        // Initialize on page load
+        renderPresets();
     </script>
 </body>
 </html>
