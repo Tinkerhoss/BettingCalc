@@ -1,1 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kelly Criterion Betting Calculator</title>
+    <style>
+        :root {
+            --bg-color: #1a202c;
+            --container-bg: #222a38;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --border-color: #475569;
+            --dotted-line: rgba(148, 163, 184, 0.4);
+            --danger: #ef4444;
+            --success: #10b981;
+        }
 
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background-color: var(--container-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            font-family: Georgia, serif;
+            font-size: 2.2rem;
+            margin-top: 0;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            font-family: Georgia, serif;
+            font-style: italic;
+            color: var(--text-muted);
+            margin-bottom: 30px;
+            font-size: 0.95rem;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            margin-bottom: 25px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            padding: 10px 20px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-main);
+        }
+
+        .tab-btn.active {
+            color: var(--text-main);
+            border-bottom: 3px solid var(--accent);
+            font-weight: bold;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Form Rows */
+        .form-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px dotted var(--dotted-line);
+        }
+
+        .form-row.result-row {
+            margin-top: 10px;
+        }
+
+        label {
+            font-size: 1.05rem;
+            font-weight: 500;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select {
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            font-size: 1.05rem;
+            text-align: right;
+            outline: none;
+            width: 50%;
+            font-family: inherit;
+        }
+
+        input[type="number"]::-webkit-inner-spin-button, 
+        input[type="number"]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+
+        select {
+            background-color: #2a3441;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 4px;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .result-value {
+            font-weight: bold;
+            font-style: italic;
+            font-family: Georgia, serif;
+        }
+
+        .ev-positive { color: var(--success); }
+        .ev-negative { color: var(--danger); }
+
+        /* Buttons */
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+
+        button.action-btn {
+            flex: 1;
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button.action-btn:hover {
+            background-color: var(--accent-hover);
+        }
+        
+        button.export-btn {
+            background-color: #059669;
+        }
+
+        button.export-btn:hover {
+            background-color: #047857;
+        }
+
+        /* Log Section */
+        .log-section {
+            margin-top: 40px;
+            width: 100%;
+            max-width: 800px;
+            background-color: var(--container-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 0.9rem;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background-color: rgba(255, 255, 255, 0.05);
+            font-weight: bold;
+            color: var(--text-muted);
+        }
+
+        .empty-log {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 20px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1 id="main-title">Laying with Kelly Calculator</h1>
+        <div class="subtitle" id="main-subtitle">For calculating your stake sizes, for lay bets, based on the Kelly Criterion</div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('lay')">Lay Bets</button>
+            <button class="tab-btn" onclick="switchTab('back')">Back Bets</button>
+        </div>
+
+        <!-- LAY TAB -->
+        <div id="lay-tab" class="tab-content active">
+            <div class="form-row">
+                <label>Bet Name</label>
+                <input type="text" id="lay-name" placeholder="e.g. 14:30 Ascot">
+            </div>
+            <div class="form-row">
+                <label>Lay Odds</label>
+                <input type="number" id="lay-odds" step="0.01" value="4">
+            </div>
+            <div class="form-row">
+                <label>Fair Odds</label>
+                <input type="number" id="lay-fair" step="0.01" value="5">
+            </div>
+            <div class="form-row">
+                <label>Bankroll</label>
+                <input type="number" id="lay-bankroll" step="1" value="5000">
+            </div>
+            <div class="form-row">
+                <label>Fractional Kelly</label>
+                <select id="lay-fraction">
+                    <option value="1">Full Kelly</option>
+                    <option value="0.5">Half Kelly</option>
+                    <option value="0.25" selected>Quarter Kelly</option>
+                    <option value="0.125">Eighth Kelly</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <label>Commission Rate (%)</label>
+                <input type="number" id="lay-comm" step="0.1" value="2">
+            </div>
+
+            <br>
+            <div class="form-row result-row">
+                <label>Liability</label>
+                <div class="result-value" id="lay-res-liability">£0.00</div>
+            </div>
+            <div class="form-row result-row">
+                <label>Backer's Stake</label>
+                <div class="result-value" id="lay-res-backer">£0.00</div>
+            </div>
+            <div class="form-row result-row">
+                <label>Potential net win</label>
+                <div class="result-value" id="lay-res-win">£0.00</div>
+            </div>
+            <div class="form-row result-row">
+                <label>EV</label>
+                <div class="result-value" id="lay-res-ev">0.00%</div>
+            </div>
+
+            <div class="btn-group">
+                <button class="action-btn" onclick="logBet('lay')">Save to Log</button>
+            </div>
+        </div>
+
+        <!-- BACK TAB -->
+        <div id="back-tab" class="tab-content">
+            <div class="form-row">
+                <label>Bet Name</label>
+                <input type="text" id="back-name" placeholder="e.g. Man Utd Win">
+            </div>
+            <div class="form-row">
+                <label>Back Odds</label>
+                <input type="number" id="back-odds" step="0.01" value="2.5">
+            </div>
+            <div class="form-row">
+                <label>Fair Odds</label>
+                <input type="number" id="back-fair" step="0.01" value="2">
+            </div>
+            <div class="form-row">
+                <label>Bankroll</label>
+                <input type="number" id="back-bankroll" step="1" value="5000">
+            </div>
+            <div class="form-row">
+                <label>Fractional Kelly</label>
+                <select id="back-fraction">
+                    <option value="1">Full Kelly</option>
+                    <option value="0.5">Half Kelly</option>
+                    <option value="0.25" selected>Quarter Kelly</option>
+                    <option value="0.125">Eighth Kelly</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <label>Commission Rate (%)</label>
+                <input type="number" id="back-comm" step="0.1" value="2">
+            </div>
+
+            <br>
+            <div class="form-row result-row">
+                <label>Your Stake</label>
+                <div class="result-value" id="back-res-stake">£0.00</div>
+            </div>
+            <div class="form-row result-row">
+                <label>Potential net win</label>
+                <div class="result-value" id="back-res-win">£0.00</div>
+            </div>
+            <div class="form-row result-row">
+                <label>EV</label>
+                <div class="result-value" id="back-res-ev">0.00%</div>
+            </div>
+
+            <div class="btn-group">
+                <button class="action-btn" onclick="logBet('back')">Save to Log</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOG SECTION -->
+    <div class="log-section">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2 style="margin: 0; font-family: Georgia, serif;">Session Log</h2>
+            <button class="action-btn export-btn" style="flex: none; padding: 8px 16px;" onclick="exportCSV()">Export to CSV</button>
+        </div>
+        
+        <table id="log-table">
+            <thead>
+                <tr>
+                    <th>Date & Time</th>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Odds</th>
+                    <th>Fair</th>
+                    <th>Risk (Stake/Liab)</th>
+                    <th>Net Win</th>
+                    <th>EV%</th>
+                </tr>
+            </thead>
+            <tbody id="log-body">
+                <tr><td colspan="8" class="empty-log">No bets logged in this session yet.</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Store running log
+        let betLog = [];
+
+        // Tab Switching Logic
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+            
+            document.getElementById(tab + '-tab').classList.add('active');
+            event.target.classList.add('active');
+
+            if (tab === 'lay') {
+                document.getElementById('main-title').innerText = "Laying with Kelly Calculator";
+                document.getElementById('main-subtitle').innerText = "For calculating your stake sizes, for lay bets, based on the Kelly Criterion";
+            } else {
+                document.getElementById('main-title').innerText = "Backing with Kelly Calculator";
+                document.getElementById('main-subtitle').innerText = "For calculating your stake sizes, for back bets, based on the Kelly Criterion";
+            }
+        }
+
+        // Format Currency
+        function formatCurrency(num) {
+            return '£' + parseFloat(num).toFixed(2);
+        }
+
+        // --- CALCULATION LOGIC ---
+
+        function calculateLayValues() {
+            const odds = parseFloat(document.getElementById('lay-odds').value);
+            const fair = parseFloat(document.getElementById('lay-fair').value);
+            const bankroll = parseFloat(document.getElementById('lay-bankroll').value);
+            const fraction = parseFloat(document.getElementById('lay-fraction').value);
+            const comm = parseFloat(document.getElementById('lay-comm').value);
+
+            if (!odds || !fair || !bankroll || odds <= 1) return null;
+
+            const pBacker = 1 / fair;
+            const pLayer = 1 - pBacker;
+            
+            // Effective payout ratio for the layer factoring in commission
+            const b = (1 - (comm / 100)) / (odds - 1);
+            
+            // Kelly Fraction of Bankroll to risk as liability
+            let kelly = pLayer - (pBacker / b);
+            if (kelly < 0) kelly = 0; 
+
+            const fullLiability = bankroll * kelly;
+            const targetLiability = fullLiability * fraction;
+            
+            const backersStake = targetLiability / (odds - 1);
+            const netWin = backersStake * (1 - (comm / 100));
+
+            const expectedProfit = (pLayer * netWin) - (pBacker * targetLiability);
+            let evPercent = 0;
+            if (targetLiability > 0) {
+                evPercent = 100 * (1 + (expectedProfit / targetLiability));
+            }
+
+            return {
+                liability: targetLiability,
+                backersStake: backersStake,
+                netWin: netWin,
+                ev: evPercent
+            };
+        }
+
+        function calculateBackValues() {
+            const odds = parseFloat(document.getElementById('back-odds').value);
+            const fair = parseFloat(document.getElementById('back-fair').value);
+            const bankroll = parseFloat(document.getElementById('back-bankroll').value);
+            const fraction = parseFloat(document.getElementById('back-fraction').value);
+            const comm = parseFloat(document.getElementById('back-comm').value);
+
+            if (!odds || !fair || !bankroll || odds <= 1) return null;
+
+            const p = 1 / fair;
+            const q = 1 - p;
+            
+            // Effective payout ratio for backer factoring in commission
+            const b = (odds - 1) * (1 - (comm / 100));
+
+            let kelly = p - (q / b);
+            if (kelly < 0) kelly = 0;
+
+            const targetStake = bankroll * kelly * fraction;
+            const netWin = targetStake * b;
+
+            const expectedProfit = (p * netWin) - (q * targetStake);
+            let evPercent = 0;
+            if (targetStake > 0) {
+                evPercent = 100 * (1 + (expectedProfit / targetStake));
+            }
+
+            return {
+                stake: targetStake,
+                netWin: netWin,
+                ev: evPercent
+            };
+        }
+
+        // --- UPDATE UI DISPLAYS ---
+
+        function updateLayUI() {
+            const res = calculateLayValues();
+            if (!res) return;
+
+            document.getElementById('lay-res-liability').innerText = formatCurrency(res.liability);
+            document.getElementById('lay-res-backer').innerText = formatCurrency(res.backersStake);
+            document.getElementById('lay-res-win').innerText = formatCurrency(res.netWin);
+            
+            const evEl = document.getElementById('lay-res-ev');
+            evEl.innerText = res.ev.toFixed(2) + '%';
+            evEl.className = 'result-value ' + (res.ev >= 100 ? 'ev-positive' : 'ev-negative');
+        }
+
+        function updateBackUI() {
+            const res = calculateBackValues();
+            if (!res) return;
+
+            document.getElementById('back-res-stake').innerText = formatCurrency(res.stake);
+            document.getElementById('back-res-win').innerText = formatCurrency(res.netWin);
+            
+            const evEl = document.getElementById('back-res-ev');
+            evEl.innerText = res.ev.toFixed(2) + '%';
+            evEl.className = 'result-value ' + (res.ev >= 100 ? 'ev-positive' : 'ev-negative');
+        }
+
+        // Attach Event Listeners
+        const layInputs = ['lay-odds', 'lay-fair', 'lay-bankroll', 'lay-fraction', 'lay-comm'];
+        layInputs.forEach(id => document.getElementById(id).addEventListener('input', updateLayUI));
+
+        const backInputs = ['back-odds', 'back-fair', 'back-bankroll', 'back-fraction', 'back-comm'];
+        backInputs.forEach(id => document.getElementById(id).addEventListener('input', updateBackUI));
+
+        // Initial Calculation
+        updateLayUI();
+        updateBackUI();
+
+        // --- LOGGING & EXPORT LOGIC ---
+
+        function logBet(type) {
+            const now = new Date();
+            const dateStr = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
+            
+            let logEntry = {};
+
+            if (type === 'lay') {
+                const res = calculateLayValues();
+                const name = document.getElementById('lay-name').value || 'Unnamed Lay';
+                
+                logEntry = {
+                    dateTime: dateStr,
+                    name: name,
+                    type: 'Lay',
+                    odds: document.getElementById('lay-odds').value,
+                    fair: document.getElementById('lay-fair').value,
+                    bankroll: document.getElementById('lay-bankroll').value,
+                    fraction: document.getElementById('lay-fraction').options[document.getElementById('lay-fraction').selectedIndex].text,
+                    commission: document.getElementById('lay-comm').value,
+                    risk: res.liability, // Liability for lay
+                    backersStake: res.backersStake,
+                    netWin: res.netWin,
+                    ev: res.ev
+                };
+            } else {
+                const res = calculateBackValues();
+                const name = document.getElementById('back-name').value || 'Unnamed Back';
+                
+                logEntry = {
+                    dateTime: dateStr,
+                    name: name,
+                    type: 'Back',
+                    odds: document.getElementById('back-odds').value,
+                    fair: document.getElementById('back-fair').value,
+                    bankroll: document.getElementById('back-bankroll').value,
+                    fraction: document.getElementById('back-fraction').options[document.getElementById('back-fraction').selectedIndex].text,
+                    commission: document.getElementById('back-comm').value,
+                    risk: res.stake, // Stake for back
+                    backersStake: 0, // N/A
+                    netWin: res.netWin,
+                    ev: res.ev
+                };
+            }
+
+            betLog.push(logEntry);
+            renderLogTable();
+            
+            // Clear name field for next bet
+            document.getElementById(type + '-name').value = '';
+        }
+
+        function renderLogTable() {
+            const tbody = document.getElementById('log-body');
+            tbody.innerHTML = '';
+
+            if (betLog.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="empty-log">No bets logged in this session yet.</td></tr>';
+                return;
+            }
+
+            // Render in reverse chronological order
+            [...betLog].reverse().forEach(bet => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${bet.dateTime}</td>
+                    <td><strong>${bet.name}</strong></td>
+                    <td><span style="color: ${bet.type === 'Lay' ? '#f472b6' : '#60a5fa'}">${bet.type}</span></td>
+                    <td>${bet.odds}</td>
+                    <td>${bet.fair}</td>
+                    <td>${formatCurrency(bet.risk)}</td>
+                    <td>${formatCurrency(bet.netWin)}</td>
+                    <td class="${bet.ev >= 100 ? 'ev-positive' : 'ev-negative'}">${bet.ev.toFixed(2)}%</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function exportCSV() {
+            if (betLog.length === 0) {
+                alert('No bets to export.');
+                return;
+            }
+
+            // Define CSV Headers
+            const headers = [
+                "Date & Time", "Bet Name", "Type", "Market Odds", "Fair Odds", 
+                "Bankroll", "Kelly Fraction", "Commission (%)", 
+                "Risked Amount (£)", "Backer's Stake (£)", "Potential Net Win (£)", "EV (%)"
+            ];
+
+            let csvContent = headers.join(',') + '\n';
+
+            // Build Rows
+            betLog.forEach(bet => {
+                const row = [
+                    `"${bet.dateTime}"`,
+                    `"${bet.name.replace(/"/g, '""')}"`, // escape quotes
+                    bet.type,
+                    bet.odds,
+                    bet.fair,
+                    bet.bankroll,
+                    bet.fraction,
+                    bet.commission,
+                    bet.risk.toFixed(2),
+                    bet.type === 'Lay' ? bet.backersStake.toFixed(2) : '0.00',
+                    bet.netWin.toFixed(2),
+                    bet.ev.toFixed(2)
+                ];
+                csvContent += row.join(',') + '\n';
+            });
+
+            // Trigger Download
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `betting_log_${new Date().getTime()}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
