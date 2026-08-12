@@ -36,6 +36,7 @@
             padding: 30px;
             border-radius: 12px;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            box-sizing: border-box;
         }
 
         h1 {
@@ -51,6 +52,70 @@
             color: var(--text-muted);
             margin-bottom: 30px;
             font-size: 0.95rem;
+        }
+
+        /* Views */
+        #presets-view, #calculator-view {
+            display: none;
+        }
+
+        #presets-view.active, #calculator-view.active {
+            display: block;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 0;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: bold;
+        }
+
+        .back-btn:hover {
+            color: var(--text-main);
+        }
+
+        /* Preset Cards */
+        .preset-card {
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        .preset-card:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .preset-info h3 {
+            margin: 0 0 5px 0;
+            font-size: 1.2rem;
+            color: var(--text-main);
+        }
+
+        .preset-info p {
+            margin: 0;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+        }
+
+        .add-preset-section {
+            margin-top: 40px;
+            padding-top: 25px;
+            border-top: 1px solid var(--border-color);
         }
 
         /* Tabs */
@@ -162,6 +227,7 @@
             font-weight: bold;
             cursor: pointer;
             transition: background 0.2s;
+            width: 100%;
         }
 
         button.action-btn:hover {
@@ -178,6 +244,7 @@
 
         /* Log Section */
         .log-section {
+            display: none;
             margin-top: 40px;
             width: 100%;
             max-width: 800px;
@@ -186,6 +253,11 @@
             border-radius: 12px;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
             overflow-x: auto;
+            box-sizing: border-box;
+        }
+
+        .log-section.active {
+            display: block;
         }
 
         table {
@@ -217,7 +289,37 @@
 </head>
 <body>
 
-    <div class="container">
+    <!-- PRESETS VIEW (MAIN PAGE) -->
+    <div id="presets-view" class="container active">
+        <h1>Your Presets</h1>
+        <div class="subtitle">Select a setup to launch the calculator</div>
+
+        <div id="preset-list">
+            <!-- Presets rendered here via JS -->
+        </div>
+
+        <div class="add-preset-section">
+            <h3 style="margin-top: 0; margin-bottom: 20px; font-family: Georgia, serif;">Create New Preset</h3>
+            <div class="form-row">
+                <label>Preset Name</label>
+                <input type="text" id="new-preset-name" placeholder="e.g. Weekend Racing">
+            </div>
+            <div class="form-row">
+                <label>Fractional Kelly (Decimal)</label>
+                <input type="number" id="new-preset-fraction" step="0.001" value="0.25">
+            </div>
+            <div class="form-row">
+                <label>Commission Rate (%)</label>
+                <input type="number" id="new-preset-comm" step="0.1" value="2">
+            </div>
+            <button class="action-btn" style="margin-top: 20px;" onclick="addNewPreset()">Save Preset</button>
+        </div>
+    </div>
+
+    <!-- CALCULATOR VIEW -->
+    <div id="calculator-view" class="container">
+        <button class="back-btn" onclick="showPresetsView()">&#8592; Back to Presets</button>
+
         <h1 id="main-title">Laying with Kelly Calculator</h1>
         <div class="subtitle" id="main-subtitle">For calculating your stake sizes, for lay bets, based on the Kelly Criterion</div>
 
@@ -245,13 +347,8 @@
                 <input type="number" id="lay-bankroll" step="1" value="5000">
             </div>
             <div class="form-row">
-                <label>Fractional Kelly</label>
-                <select id="lay-fraction">
-                    <option value="1">Full Kelly</option>
-                    <option value="0.5">Half Kelly</option>
-                    <option value="0.25" selected>Quarter Kelly</option>
-                    <option value="0.125">Eighth Kelly</option>
-                </select>
+                <label>Fractional Kelly (Decimal)</label>
+                <input type="number" id="lay-fraction" step="0.001" value="0.25">
             </div>
             <div class="form-row">
                 <label>Commission Rate (%)</label>
@@ -300,13 +397,8 @@
                 <input type="number" id="back-bankroll" step="1" value="5000">
             </div>
             <div class="form-row">
-                <label>Fractional Kelly</label>
-                <select id="back-fraction">
-                    <option value="1">Full Kelly</option>
-                    <option value="0.5">Half Kelly</option>
-                    <option value="0.25" selected>Quarter Kelly</option>
-                    <option value="0.125">Eighth Kelly</option>
-                </select>
+                <label>Fractional Kelly (Decimal)</label>
+                <input type="number" id="back-fraction" step="0.001" value="0.25">
             </div>
             <div class="form-row">
                 <label>Commission Rate (%)</label>
@@ -334,13 +426,13 @@
     </div>
 
     <!-- LOG SECTION -->
-    <div class="log-section">
+    <div id="log-section" class="log-section">
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <h2 style="margin: 0; font-family: Georgia, serif;">Session Log</h2>
-            <button class="action-btn export-btn" style="flex: none; padding: 8px 16px;" onclick="exportCSV()">Export to CSV</button>
+            <button class="action-btn export-btn" style="flex: none; padding: 8px 16px; width: auto;" onclick="exportCSV()">Export to CSV</button>
         </div>
         
-        <table id="log-table">
+        <table>
             <thead>
                 <tr>
                     <th>Date & Time</th>
@@ -360,10 +452,90 @@
     </div>
 
     <script>
-        // Store running log
+        // --- PRESETS LOGIC ---
+        
+        // Load presets from LocalStorage or initialize with a default setup
+        let presets = JSON.parse(localStorage.getItem('bettingPresets')) || [
+            { id: 1, name: 'Betfair Exchange', fraction: '0.25', comm: 2.0 }
+        ];
+
+        function savePresets() {
+            localStorage.setItem('bettingPresets', JSON.stringify(presets));
+        }
+
+        function renderPresets() {
+            const list = document.getElementById('preset-list');
+            list.innerHTML = '';
+            
+            presets.forEach(p => {
+                const div = document.createElement('div');
+                div.className = 'preset-card';
+                div.onclick = () => openPreset(p.id);
+                div.innerHTML = `
+                    <div class="preset-info">
+                        <h3>${p.name}</h3>
+                        <p>${p.fraction} Kelly | ${p.comm}% Commission</p>
+                    </div>
+                    <div style="color: var(--accent); font-size: 1.5rem;">&#8594;</div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function addNewPreset() {
+            const name = document.getElementById('new-preset-name').value || 'New Custom Preset';
+            const fraction = document.getElementById('new-preset-fraction').value || '1';
+            const comm = parseFloat(document.getElementById('new-preset-comm').value) || 0;
+
+            presets.push({
+                id: Date.now(),
+                name: name,
+                fraction: fraction,
+                comm: comm
+            });
+
+            savePresets();
+            renderPresets();
+
+            // Reset the form fields
+            document.getElementById('new-preset-name').value = '';
+            document.getElementById('new-preset-fraction').value = '0.25';
+            document.getElementById('new-preset-comm').value = '2';
+        }
+
+        function openPreset(id) {
+            const p = presets.find(x => x.id === id);
+            if (!p) return;
+
+            // Inject preset settings into calculator inputs
+            document.getElementById('lay-fraction').value = p.fraction;
+            document.getElementById('back-fraction').value = p.fraction;
+            document.getElementById('lay-comm').value = p.comm;
+            document.getElementById('back-comm').value = p.comm;
+
+            // Refresh UI Calculations
+            updateLayUI();
+            updateBackUI();
+
+            // Toggle views
+            document.getElementById('presets-view').classList.remove('active');
+            document.getElementById('calculator-view').classList.add('active');
+            document.getElementById('log-section').classList.add('active');
+        }
+
+        function showPresetsView() {
+            document.getElementById('calculator-view').classList.remove('active');
+            document.getElementById('log-section').classList.remove('active');
+            document.getElementById('presets-view').classList.add('active');
+        }
+
+        // Initialize presets on load
+        renderPresets();
+
+        // --- CALCULATOR & LOGGING LOGIC ---
+        
         let betLog = [];
 
-        // Tab Switching Logic
         function switchTab(tab) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
@@ -380,12 +552,9 @@
             }
         }
 
-        // Format Currency
         function formatCurrency(num) {
             return '£' + parseFloat(num).toFixed(2);
         }
-
-        // --- CALCULATION LOGIC ---
 
         function calculateLayValues() {
             const odds = parseFloat(document.getElementById('lay-odds').value);
@@ -398,32 +567,23 @@
 
             const pBacker = 1 / fair;
             const pLayer = 1 - pBacker;
-            
-            // Effective payout ratio for the layer factoring in commission
             const b = (1 - (comm / 100)) / (odds - 1);
             
-            // Kelly Fraction of Bankroll to risk as liability
             let kelly = pLayer - (pBacker / b);
             if (kelly < 0) kelly = 0; 
 
             const fullLiability = bankroll * kelly;
             const targetLiability = fullLiability * fraction;
-            
             const backersStake = targetLiability / (odds - 1);
             const netWin = backersStake * (1 - (comm / 100));
-
             const expectedProfit = (pLayer * netWin) - (pBacker * targetLiability);
+            
             let evPercent = 0;
             if (targetLiability > 0) {
                 evPercent = 100 * (1 + (expectedProfit / targetLiability));
             }
 
-            return {
-                liability: targetLiability,
-                backersStake: backersStake,
-                netWin: netWin,
-                ev: evPercent
-            };
+            return { liability: targetLiability, backersStake: backersStake, netWin: netWin, ev: evPercent };
         }
 
         function calculateBackValues() {
@@ -437,8 +597,6 @@
 
             const p = 1 / fair;
             const q = 1 - p;
-            
-            // Effective payout ratio for backer factoring in commission
             const b = (odds - 1) * (1 - (comm / 100));
 
             let kelly = p - (q / b);
@@ -446,21 +604,15 @@
 
             const targetStake = bankroll * kelly * fraction;
             const netWin = targetStake * b;
-
             const expectedProfit = (p * netWin) - (q * targetStake);
+            
             let evPercent = 0;
             if (targetStake > 0) {
                 evPercent = 100 * (1 + (expectedProfit / targetStake));
             }
 
-            return {
-                stake: targetStake,
-                netWin: netWin,
-                ev: evPercent
-            };
+            return { stake: targetStake, netWin: netWin, ev: evPercent };
         }
-
-        // --- UPDATE UI DISPLAYS ---
 
         function updateLayUI() {
             const res = calculateLayValues();
@@ -487,58 +639,46 @@
             evEl.className = 'result-value ' + (res.ev >= 100 ? 'ev-positive' : 'ev-negative');
         }
 
-        // Attach Event Listeners
         const layInputs = ['lay-odds', 'lay-fair', 'lay-bankroll', 'lay-fraction', 'lay-comm'];
         layInputs.forEach(id => document.getElementById(id).addEventListener('input', updateLayUI));
 
         const backInputs = ['back-odds', 'back-fair', 'back-bankroll', 'back-fraction', 'back-comm'];
         backInputs.forEach(id => document.getElementById(id).addEventListener('input', updateBackUI));
 
-        // Initial Calculation
-        updateLayUI();
-        updateBackUI();
-
-        // --- LOGGING & EXPORT LOGIC ---
-
         function logBet(type) {
             const now = new Date();
             const dateStr = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
-            
             let logEntry = {};
 
             if (type === 'lay') {
                 const res = calculateLayValues();
-                const name = document.getElementById('lay-name').value || 'Unnamed Lay';
-                
                 logEntry = {
                     dateTime: dateStr,
-                    name: name,
+                    name: document.getElementById('lay-name').value || 'Unnamed Lay',
                     type: 'Lay',
                     odds: document.getElementById('lay-odds').value,
                     fair: document.getElementById('lay-fair').value,
                     bankroll: document.getElementById('lay-bankroll').value,
-                    fraction: document.getElementById('lay-fraction').options[document.getElementById('lay-fraction').selectedIndex].text,
+                    fraction: document.getElementById('lay-fraction').value,
                     commission: document.getElementById('lay-comm').value,
-                    risk: res.liability, // Liability for lay
+                    risk: res.liability,
                     backersStake: res.backersStake,
                     netWin: res.netWin,
                     ev: res.ev
                 };
             } else {
                 const res = calculateBackValues();
-                const name = document.getElementById('back-name').value || 'Unnamed Back';
-                
                 logEntry = {
                     dateTime: dateStr,
-                    name: name,
+                    name: document.getElementById('back-name').value || 'Unnamed Back',
                     type: 'Back',
                     odds: document.getElementById('back-odds').value,
                     fair: document.getElementById('back-fair').value,
                     bankroll: document.getElementById('back-bankroll').value,
-                    fraction: document.getElementById('back-fraction').options[document.getElementById('back-fraction').selectedIndex].text,
+                    fraction: document.getElementById('back-fraction').value,
                     commission: document.getElementById('back-comm').value,
-                    risk: res.stake, // Stake for back
-                    backersStake: 0, // N/A
+                    risk: res.stake,
+                    backersStake: 0,
                     netWin: res.netWin,
                     ev: res.ev
                 };
@@ -546,8 +686,6 @@
 
             betLog.push(logEntry);
             renderLogTable();
-            
-            // Clear name field for next bet
             document.getElementById(type + '-name').value = '';
         }
 
@@ -560,7 +698,6 @@
                 return;
             }
 
-            // Render in reverse chronological order
             [...betLog].reverse().forEach(bet => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
@@ -583,7 +720,6 @@
                 return;
             }
 
-            // Define CSV Headers
             const headers = [
                 "Date & Time", "Bet Name", "Type", "Market Odds", "Fair Odds", 
                 "Bankroll", "Kelly Fraction", "Commission (%)", 
@@ -592,11 +728,10 @@
 
             let csvContent = headers.join(',') + '\n';
 
-            // Build Rows
             betLog.forEach(bet => {
                 const row = [
                     `"${bet.dateTime}"`,
-                    `"${bet.name.replace(/"/g, '""')}"`, // escape quotes
+                    `"${bet.name.replace(/"/g, '""')}"`,
                     bet.type,
                     bet.odds,
                     bet.fair,
@@ -611,7 +746,6 @@
                 csvContent += row.join(',') + '\n';
             });
 
-            // Trigger Download
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
