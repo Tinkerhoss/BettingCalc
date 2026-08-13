@@ -437,8 +437,8 @@
     <div id="calculator-view" class="container">
         <button class="nav-btn" onclick="showPresetsView()">&#8592; Back to Presets</button>
 
-        <h1 id="main-title">Laying with Kelly Calculator</h1>
-        <div class="subtitle" id="main-subtitle">For calculating your stake sizes, for lay bets, based on the Kelly Criterion</div>
+        <h1 id="main-title">Lay bets</h1>
+        <div class="subtitle" id="main-subtitle"></div>
 
         <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('lay')">Lay Bets</button>
@@ -477,6 +477,10 @@
             <div class="form-row result-row">
                 <label>Liability</label>
                 <div class="result-value" id="lay-res-liability">£0.00</div>
+            </div>
+            <div class="form-row result-row">
+                <label>Liability % of Bank</label>
+                <div class="result-value" id="lay-res-risk-pct">0.00%</div>
             </div>
             <div class="form-row result-row">
                 <label>Backer's Stake</label>
@@ -528,6 +532,10 @@
             <div class="form-row result-row">
                 <label>Your Stake</label>
                 <div class="result-value" id="back-res-stake">£0.00</div>
+            </div>
+            <div class="form-row result-row">
+                <label>Stake % of Bank</label>
+                <div class="result-value" id="back-res-risk-pct">0.00%</div>
             </div>
             <div class="form-row result-row">
                 <label>Potential net win</label>
@@ -744,11 +752,11 @@
             document.getElementById(tab + '-tab').classList.add('active');
             event.target.classList.add('active');
             if (tab === 'lay') {
-                document.getElementById('main-title').innerText = "Laying with Kelly Calculator";
-                document.getElementById('main-subtitle').innerText = "For calculating your stake sizes, for lay bets, based on the Kelly Criterion";
+                document.getElementById('main-title').innerText = "Lay bets";
+                document.getElementById('main-subtitle').innerText = "";
             } else {
-                document.getElementById('main-title').innerText = "Backing with Kelly Calculator";
-                document.getElementById('main-subtitle').innerText = "For calculating your stake sizes, for back bets, based on the Kelly Criterion";
+                document.getElementById('main-title').innerText = "Back bets";
+                document.getElementById('main-subtitle').innerText = "";
             }
         }
 
@@ -787,7 +795,13 @@
                 
                 if(isNaN(evPercent)) evPercent = 0;
 
-                return { liability: targetLiability, backersStake: backersStake, netWin: netWin, ev: evPercent };
+                return { 
+                    liability: targetLiability, 
+                    backersStake: backersStake, 
+                    netWin: netWin, 
+                    ev: evPercent, 
+                    riskPct: (targetLiability / bankroll) * 100 
+                };
             } catch (err) {
                 document.getElementById('lay-error').innerText = 'Formula Error: Check settings for Lay logic.';
                 console.error(err);
@@ -822,7 +836,12 @@
                 
                 if(isNaN(evPercent)) evPercent = 0;
 
-                return { stake: targetStake, netWin: netWin, ev: evPercent };
+                return { 
+                    stake: targetStake, 
+                    netWin: netWin, 
+                    ev: evPercent, 
+                    riskPct: (targetStake / bankroll) * 100 
+                };
             } catch (err) {
                 document.getElementById('back-error').innerText = 'Formula Error: Check settings for Back logic.';
                 console.error(err);
@@ -834,6 +853,7 @@
             const res = calculateLayValues();
             if (!res) return;
             document.getElementById('lay-res-liability').innerText = formatCurrency(res.liability);
+            document.getElementById('lay-res-risk-pct').innerText = (res.riskPct || 0).toFixed(2) + '%';
             document.getElementById('lay-res-backer').innerText = formatCurrency(res.backersStake);
             document.getElementById('lay-res-win').innerText = formatCurrency(res.netWin);
             
@@ -846,6 +866,7 @@
             const res = calculateBackValues();
             if (!res) return;
             document.getElementById('back-res-stake').innerText = formatCurrency(res.stake);
+            document.getElementById('back-res-risk-pct').innerText = (res.riskPct || 0).toFixed(2) + '%';
             document.getElementById('back-res-win').innerText = formatCurrency(res.netWin);
             
             const evEl = document.getElementById('back-res-ev');
