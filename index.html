@@ -410,7 +410,7 @@
 
         <h4 style="color: white; margin-top: 25px;">Lay Bets Logic</h4>
         <div class="formula-group">
-            <div class="formula-vars">Available vars: <code>bankroll, kelly, fraction, odds, comm, pLayer, pBacker, b</code></div>
+            <div class="formula-vars">Available vars: <code>bankroll, fraction, odds, comm, fair, c (decimal comm), effectiveOdds, edge</code></div>
             <label>Liability (Risk)</label>
             <input type="text" class="formula-input" id="f-lay-liability">
             
@@ -582,10 +582,10 @@
             backStake: 'bankroll * kelly * fraction',
             backNetWin: 'stake * b',
             backEV: '100 * (1 + (((p * netWin) - (q * stake)) / stake))',
-            layLiability: 'bankroll * kelly * fraction',
-            layBackersStake: 'liability / (odds - 1)',
-            layNetWin: 'backersStake * (1 - (comm / 100))',
-            layEV: '100 * (1 + (((pLayer * netWin) - (pBacker * liability)) / liability))'
+            layLiability: 'edge > 0 ? bankroll * fraction * edge : 0',
+            layBackersStake: 'liability > 0 ? liability / (odds - 1) : 0',
+            layNetWin: 'backersStake * (1 - c)',
+            layEV: 'edge > 0 ? (1 + (edge / (odds - 1))) * 100 : 0'
         };
 
         let formulas = JSON.parse(localStorage.getItem('bettingFormulas')) || { ...defaultFormulas };
@@ -719,6 +719,10 @@
             };
             localStorage.setItem('bettingFormulas', JSON.stringify(formulas));
             alert("Formulas saved successfully.");
+            
+            // Re-run calculations with new formulas
+            updateLayUI();
+            updateBackUI();
         }
 
         function restoreDefaultFormulas() {
@@ -726,6 +730,10 @@
                 formulas = { ...defaultFormulas };
                 localStorage.setItem('bettingFormulas', JSON.stringify(formulas));
                 renderSettings();
+                
+                // Re-run calculations
+                updateLayUI();
+                updateBackUI();
             }
         }
 
@@ -745,7 +753,7 @@
         }
 
         function formatCurrency(num) {
-            if (isNaN(num)) return '£0.00';
+            if (isNaN(num) || num === 0) return '£0.00';
             return '£' + parseFloat(num).toFixed(2);
         }
 
@@ -759,26 +767,25 @@
 
             if (!odds || !fair || !bankroll || odds <= 1) return null;
 
-            const pBacker = 1 / fair;
-            const pLayer = 1 - pBacker;
-            const b = (1 - (comm / 100)) / (odds - 1);
-            
-            let kelly = pLayer - (pBacker / b);
-            if (kelly < 0) kelly = 0; 
+            // Updated base variables injected into custom expressions based on provided logic
+            const c = comm / 100;
+            const effectiveOdds = (odds - c) / (1 - c);
+            const edge = 1 - (effectiveOdds / fair);
 
             try {
                 // Dynamic Evaluation
-                const calcLiability = new Function('bankroll', 'kelly', 'fraction', 'odds', 'comm', 'pLayer', 'pBacker', 'b', `return ${formulas.layLiability}`);
-                const targetLiability = calcLiability(bankroll, kelly, fraction, odds, comm, pLayer, pBacker, b);
+                const calcLiability = new Function('bankroll', 'fraction', 'odds', 'comm', 'fair', 'c', 'effectiveOdds', 'edge', `return ${formulas.layLiability}`);
+                const targetLiability = calcLiability(bankroll, fraction, odds, comm, fair, c, effectiveOdds, edge);
 
-                const calcBacker = new Function('bankroll', 'kelly', 'fraction', 'odds', 'comm', 'pLayer', 'pBacker', 'b', 'liability', `return ${formulas.layBackersStake}`);
-                const backersStake = calcBacker(bankroll, kelly, fraction, odds, comm, pLayer, pBacker, b, targetLiability);
+                const calcBacker = new Function('bankroll', 'fraction', 'odds', 'comm', 'fair', 'c', 'effectiveOdds', 'edge', 'liability', `return ${formulas.layBackersStake}`);
+                const backersStake = calcBacker(bankroll, fraction, odds, comm, fair, c, effectiveOdds, edge, targetLiability);
 
-                const calcWin = new Function('bankroll', 'kelly', 'fraction', 'odds', 'comm', 'pLayer', 'pBacker', 'b', 'liability', 'backersStake', `return ${formulas.layNetWin}`);
-                const netWin = calcWin(bankroll, kelly, fraction, odds, comm, pLayer, pBacker, b, targetLiability, backersStake);
+                const calcWin = new Function('bankroll', 'fraction', 'odds', 'comm', 'fair', 'c', 'effectiveOdds', 'edge', 'liability', 'backersStake', `return ${formulas.layNetWin}`);
+                const netWin = calcWin(bankroll, fraction, odds, comm, fair, c, effectiveOdds, edge, targetLiability, backersStake);
 
-                const calcEV = new Function('bankroll', 'kelly', 'fraction', 'odds', 'comm', 'pLayer', 'pBacker', 'b', 'liability', 'backersStake', 'netWin', `return ${formulas.layEV}`);
-                let evPercent = calcEV(bankroll, kelly, fraction, odds, comm, pLayer, pBacker, b, targetLiability, backersStake, netWin);
+                const calcEV = new Function('bankroll', 'fraction', 'odds', 'comm', 'fair', 'c', 'effectiveOdds', 'edge', 'liability', 'backersStake', 'netWin', `return ${formulas.layEV}`);
+                let evPercent = calcEV(bankroll, fraction, odds, comm, fair, c, effectiveOdds, edge, targetLiability, backersStake, netWin);
+                
                 if(isNaN(evPercent)) evPercent = 0;
 
                 return { liability: targetLiability, backersStake: backersStake, netWin: netWin, ev: evPercent };
@@ -832,6 +839,7 @@
             document.getElementById('lay-res-liability').innerText = formatCurrency(res.liability);
             document.getElementById('lay-res-backer').innerText = formatCurrency(res.backersStake);
             document.getElementById('lay-res-win').innerText = formatCurrency(res.netWin);
+            
             const evEl = document.getElementById('lay-res-ev');
             evEl.innerText = res.ev.toFixed(2) + '%';
             evEl.className = 'result-value ' + (res.ev >= 100 ? 'ev-positive' : 'ev-negative');
@@ -842,6 +850,7 @@
             if (!res) return;
             document.getElementById('back-res-stake').innerText = formatCurrency(res.stake);
             document.getElementById('back-res-win').innerText = formatCurrency(res.netWin);
+            
             const evEl = document.getElementById('back-res-ev');
             evEl.innerText = res.ev.toFixed(2) + '%';
             evEl.className = 'result-value ' + (res.ev >= 100 ? 'ev-positive' : 'ev-negative');
