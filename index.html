@@ -395,7 +395,7 @@
         
         <h4 style="color: white; margin-top: 25px;">Back Bets Logic</h4>
         <div class="formula-group">
-            <div class="formula-vars">Available vars: <code>bankroll, kelly, fraction, odds, comm, p, q, b</code></div>
+            <div class="formula-vars">Available vars: <code>bankroll, fraction, odds, comm, fair, c (decimal comm), effectiveOdds, edge</code></div>
             <label>Stake Amount</label>
             <input type="text" class="formula-input" id="f-back-stake">
             
@@ -579,9 +579,9 @@
         ];
 
         const defaultFormulas = {
-            backStake: 'bankroll * kelly * fraction',
-            backNetWin: 'stake * b',
-            backEV: '100 * (1 + (((p * netWin) - (q * stake)) / stake))',
+            backStake: 'edge > 0 ? bankroll * fraction * (edge / (effectiveOdds - 1)) : 0',
+            backNetWin: 'stake * (odds - 1) * (1 - c)',
+            backEV: 'edge > 0 ? (effectiveOdds / fair) * 100 : 0',
             layLiability: 'edge > 0 ? bankroll * fraction * edge : 0',
             layBackersStake: 'liability > 0 ? liability / (odds - 1) : 0',
             layNetWin: 'backersStake * (1 - c)',
@@ -767,7 +767,6 @@
 
             if (!odds || !fair || !bankroll || odds <= 1) return null;
 
-            // Updated base variables injected into custom expressions based on provided logic
             const c = comm / 100;
             const effectiveOdds = (odds - c) / (1 - c);
             const edge = 1 - (effectiveOdds / fair);
@@ -806,23 +805,21 @@
 
             if (!odds || !fair || !bankroll || odds <= 1) return null;
 
-            const p = 1 / fair;
-            const q = 1 - p;
-            const b = (odds - 1) * (1 - (comm / 100));
-
-            let kelly = p - (q / b);
-            if (kelly < 0) kelly = 0;
+            const c = comm / 100;
+            const effectiveOdds = 1 + (odds - 1) * (1 - c);
+            const edge = (effectiveOdds / fair) - 1;
 
             try {
                 // Dynamic Evaluation
-                const calcStake = new Function('bankroll', 'kelly', 'fraction', 'odds', 'comm', 'p', 'q', 'b', `return ${formulas.backStake}`);
-                const targetStake = calcStake(bankroll, kelly, fraction, odds, comm, p, q, b);
+                const calcStake = new Function('bankroll', 'fraction', 'odds', 'comm', 'fair', 'c', 'effectiveOdds', 'edge', `return ${formulas.backStake}`);
+                const targetStake = calcStake(bankroll, fraction, odds, comm, fair, c, effectiveOdds, edge);
 
-                const calcWin = new Function('bankroll', 'kelly', 'fraction', 'odds', 'comm', 'p', 'q', 'b', 'stake', `return ${formulas.backNetWin}`);
-                const netWin = calcWin(bankroll, kelly, fraction, odds, comm, p, q, b, targetStake);
+                const calcWin = new Function('bankroll', 'fraction', 'odds', 'comm', 'fair', 'c', 'effectiveOdds', 'edge', 'stake', `return ${formulas.backNetWin}`);
+                const netWin = calcWin(bankroll, fraction, odds, comm, fair, c, effectiveOdds, edge, targetStake);
 
-                const calcEV = new Function('bankroll', 'kelly', 'fraction', 'odds', 'comm', 'p', 'q', 'b', 'stake', 'netWin', `return ${formulas.backEV}`);
-                let evPercent = calcEV(bankroll, kelly, fraction, odds, comm, p, q, b, targetStake, netWin);
+                const calcEV = new Function('bankroll', 'fraction', 'odds', 'comm', 'fair', 'c', 'effectiveOdds', 'edge', 'stake', 'netWin', `return ${formulas.backEV}`);
+                let evPercent = calcEV(bankroll, fraction, odds, comm, fair, c, effectiveOdds, edge, targetStake, netWin);
+                
                 if(isNaN(evPercent)) evPercent = 0;
 
                 return { stake: targetStake, netWin: netWin, ev: evPercent };
