@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Kelly Criterion Betting Calculator</title>
     <style>
         :root {
@@ -249,7 +249,7 @@
 
         .ev-positive { color: var(--success); }
         .ev-negative { color: var(--danger); }
-        .error-text { color: var(--danger); font-size: 0.9rem; }
+        .error-text { color: var(--danger); font-size: 0.9rem; margin-bottom: 5px; }
 
         /* Buttons */
         .btn-group {
@@ -335,6 +335,33 @@
             padding: 20px;
             font-style: italic;
         }
+
+        /* MOBILE OPTIMIZATIONS (iPhone Screens) */
+        @media (max-width: 450px) {
+            body { padding: 10px; }
+            .container { padding: 15px 20px; margin-bottom: 10px; }
+            h1 { font-size: 1.6rem; }
+            .subtitle { margin-bottom: 15px; font-size: 0.85rem; }
+            .nav-btn { margin-bottom: 15px; font-size: 0.9rem; }
+            .tabs { margin-bottom: 15px; }
+            .tab-btn { padding: 6px 12px; font-size: 0.95rem; }
+            
+            /* Tighten up form rows to fit screen height */
+            .form-row { 
+                margin-bottom: 6px; 
+                padding-bottom: 4px; 
+            }
+            .form-row.result-row { margin-top: 6px; }
+            
+            /* Slightly smaller text for inputs and labels */
+            label, input[type="text"], input[type="number"], select { 
+                font-size: 0.9rem; 
+            }
+            .result-value { font-size: 0.95rem; }
+            
+            .btn-group { margin-top: 15px; }
+            button.action-btn { padding: 10px; font-size: 0.95rem; }
+        }
     </style>
 </head>
 <body>
@@ -354,7 +381,7 @@
         </div>
 
         <div class="add-preset-section">
-            <h3 style="margin-top: 0; margin-bottom: 20px; font-family: Georgia, serif;">Create New Preset</h3>
+            <h3 style="margin-top: 0; margin-bottom: 15px; font-family: Georgia, serif;">Create New Preset</h3>
             <div class="form-row">
                 <label>Preset Name</label>
                 <input type="text" id="new-preset-name" placeholder="e.g. Weekend Racing">
@@ -371,7 +398,7 @@
                 <label>Commission Rate (%)</label>
                 <input type="number" id="new-preset-comm" step="0.1" value="2">
             </div>
-            <button class="action-btn" style="margin-top: 20px;" onclick="addNewPreset()">Save Preset</button>
+            <button class="action-btn" style="margin-top: 15px;" onclick="addNewPreset()">Save Preset</button>
         </div>
     </div>
 
@@ -383,46 +410,46 @@
         <div class="subtitle">Manage presets, logs, and customize formulas</div>
 
         <h3 style="border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">Manage Presets</h3>
-        <div id="settings-preset-list" style="margin-bottom: 30px;">
+        <div id="settings-preset-list" style="margin-bottom: 20px;">
             <!-- Presets rendered here for deletion -->
         </div>
 
         <h3 style="border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">Session Logs</h3>
-        <button class="action-btn danger-btn" style="margin-bottom: 30px;" onclick="clearSessionLogs()">Clear All Session Logs</button>
+        <button class="action-btn danger-btn" style="margin-bottom: 20px;" onclick="clearSessionLogs()">Clear All Session Logs</button>
 
         <h3 style="border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">Calculation Formulas</h3>
-        <p style="font-size: 0.9rem; color: var(--text-muted);">Customize the JS expressions used to calculate your returns. If you break it, just restore defaults.</p>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">Customize the JS expressions used to calculate your returns. If you break it, just restore defaults.</p>
         
-        <h4 style="color: white; margin-top: 25px;">Back Bets Logic</h4>
+        <h4 style="color: white; margin-top: 20px;">Back Bets Logic</h4>
         <div class="formula-group">
             <div class="formula-vars">Available vars: <code>bankroll, fraction, odds, comm, fair, c (decimal comm), effectiveOdds, edge</code></div>
             <label>Stake Amount</label>
             <input type="text" class="formula-input" id="f-back-stake">
             
-            <label style="margin-top: 15px;">Net Win</label>
+            <label style="margin-top: 10px;">Net Win</label>
             <div class="formula-vars">Available vars: <code>[all above] + stake</code></div>
             <input type="text" class="formula-input" id="f-back-win">
             
-            <label style="margin-top: 15px;">Expected Value (%)</label>
+            <label style="margin-top: 10px;">Expected Value (%)</label>
             <div class="formula-vars">Available vars: <code>[all above] + stake, netWin</code></div>
             <input type="text" class="formula-input" id="f-back-ev">
         </div>
 
-        <h4 style="color: white; margin-top: 25px;">Lay Bets Logic</h4>
+        <h4 style="color: white; margin-top: 20px;">Lay Bets Logic</h4>
         <div class="formula-group">
             <div class="formula-vars">Available vars: <code>bankroll, fraction, odds, comm, fair, c (decimal comm), effectiveOdds, edge</code></div>
             <label>Liability (Risk)</label>
             <input type="text" class="formula-input" id="f-lay-liability">
             
-            <label style="margin-top: 15px;">Backer's Stake</label>
+            <label style="margin-top: 10px;">Backer's Stake</label>
             <div class="formula-vars">Available vars: <code>[all above] + liability</code></div>
             <input type="text" class="formula-input" id="f-lay-backer">
             
-            <label style="margin-top: 15px;">Net Win</label>
+            <label style="margin-top: 10px;">Net Win</label>
             <div class="formula-vars">Available vars: <code>[all above] + liability, backersStake</code></div>
             <input type="text" class="formula-input" id="f-lay-win">
             
-            <label style="margin-top: 15px;">Expected Value (%)</label>
+            <label style="margin-top: 10px;">Expected Value (%)</label>
             <div class="formula-vars">Available vars: <code>[all above] + liability, backersStake, netWin</code></div>
             <input type="text" class="formula-input" id="f-lay-ev">
         </div>
@@ -438,7 +465,7 @@
         <button class="nav-btn" onclick="showPresetsView()">&#8592; Back to Presets</button>
 
         <h1 id="main-title">Lay bets</h1>
-        <div class="subtitle" id="main-subtitle"></div>
+        <div class="subtitle" id="main-subtitle" style="display: none;"></div>
 
         <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('lay')">Lay Bets</button>
@@ -464,7 +491,7 @@
                 <input type="number" id="lay-bankroll" step="1" value="5000">
             </div>
             <div class="form-row">
-                <label>Fractional Kelly (Decimal)</label>
+                <label>Fractional Kelly (Dec)</label>
                 <input type="number" id="lay-fraction" step="0.001" value="0.25">
             </div>
             <div class="form-row">
@@ -472,8 +499,8 @@
                 <input type="number" id="lay-comm" step="0.1" value="2">
             </div>
 
-            <br>
             <div id="lay-error" class="error-text"></div>
+            
             <div class="form-row result-row">
                 <label>Liability</label>
                 <div class="result-value" id="lay-res-liability">£0.00</div>
@@ -519,7 +546,7 @@
                 <input type="number" id="back-bankroll" step="1" value="5000">
             </div>
             <div class="form-row">
-                <label>Fractional Kelly (Decimal)</label>
+                <label>Fractional Kelly (Dec)</label>
                 <input type="number" id="back-fraction" step="0.001" value="0.25">
             </div>
             <div class="form-row">
@@ -527,8 +554,8 @@
                 <input type="number" id="back-comm" step="0.1" value="2">
             </div>
 
-            <br>
             <div id="back-error" class="error-text"></div>
+            
             <div class="form-row result-row">
                 <label>Your Stake</label>
                 <div class="result-value" id="back-res-stake">£0.00</div>
@@ -753,10 +780,8 @@
             event.target.classList.add('active');
             if (tab === 'lay') {
                 document.getElementById('main-title').innerText = "Lay bets";
-                document.getElementById('main-subtitle').innerText = "";
             } else {
                 document.getElementById('main-title').innerText = "Back bets";
-                document.getElementById('main-subtitle').innerText = "";
             }
         }
 
